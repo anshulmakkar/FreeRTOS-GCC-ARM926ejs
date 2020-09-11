@@ -35,6 +35,7 @@ AS = $(TOOLCHAIN)as
 LD = $(TOOLCHAIN)ld
 OBJCOPY = $(TOOLCHAIN)objcopy
 AR = $(TOOLCHAIN)ar
+M4 = m4
 
 # GCC flags
 CFLAG = -c
@@ -56,6 +57,9 @@ OBJDIR = obj/
 
 # FreeRTOS source base directory
 FREERTOS_SRC = FreeRTOS/Source/
+
+#System source base directory
+SYSTEM_SRC = System/
 
 # Directory with memory management source files
 FREERTOS_MEMMANG_SRC = $(FREERTOS_SRC)portable/MemMang/
@@ -92,16 +96,18 @@ FREERTOS_PORT_OBJS = port.o portISR.o
 STARTUP_OBJ = startup.o
 DRIVERS_OBJS = timer.o interrupt.o uart.o
 
-APP_OBJS = init.o main.o print.o receive.o
+#APP_OBJS = init.o main.o print.o receive.o
+APP_OBJS = init.o print.o receive.o
 # nostdlib.o must be commented out if standard lib is going to be linked!
 APP_OBJS += nostdlib.o
 
+SYSTEM_OBJS = task_manager.o system.o
 
 # All object files specified above are prefixed the intermediate directory
-OBJS = $(addprefix $(OBJDIR), $(STARTUP_OBJ) $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(APP_OBJS))
+OBJS = $(addprefix $(OBJDIR), $(STARTUP_OBJ) $(SYSTEM_OBJS) $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(APP_OBJS))
 
 # Definition of the linker script and final targets
-LINKER_SCRIPT = $(addprefix $(APP_SRC), qemu.ld)
+LINKER_SCRIPT = $(addprefix $(APP_SRC), qemu.ld) #will just create path Demo/qemu.ld
 ELF_IMAGE = image.elf
 TARGET = image.bin
 
@@ -110,7 +116,7 @@ INC_FREERTOS = $(FREERTOS_SRC)include/
 INC_DRIVERS = $(DRIVERS_SRC)include/
 
 # Complete include flags to be passed to $(CC) where necessary
-INC_FLAGS = $(INCLUDEFLAG)$(INC_FREERTOS) $(INCLUDEFLAG)$(APP_SRC) $(INCLUDEFLAG)$(FREERTOS_PORT_SRC)
+INC_FLAGS = $(INCLUDEFLAG)$(INC_FREERTOS) $(INCLUDEFLAG)$(APP_SRC) $(INCLUDEFLAG)$(FREERTOS_PORT_SRC) $(INCLUDEFLAG)$(SYSTEM_SRC)
 INC_FLAG_DRIVERS = $(INCLUDEFLAG)$(INC_DRIVERS)
 
 # Dependency on HW specific settings
@@ -171,6 +177,12 @@ $(OBJDIR)event_groups.o : $(FREERTOS_SRC)event_groups.c
 $(OBJDIR)stream_buffer.o : $(FREERTOS_SRC)stream_buffer.c
 	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAGS) $< $(OFLAG) $@
 
+# System core
+$(OBJDIR)system.o: $(SYSTEM_SRC)main.c
+	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAGS) $< $(OFLAG) $@
+
+$(OBJDIR)task_manager.o : $(SYSTEM_SRC)task_manager.c
+	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAGS) $< $(OFLAG) $@
 
 # HW specific part, in FreeRTOS/Source/portable/$(PORT_COMP_TARGET)
 
@@ -213,8 +225,8 @@ $(OBJDIR)uart.o : $(DRIVERS_SRC)uart.c $(DEP_BSP)
 
 # Demo application
 
-$(OBJDIR)main.o : $(APP_SRC)main.c
-	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAGS) $< $(OFLAG) $@
+#$(OBJDIR)main.o : $(APP_SRC)main.c
+#	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAGS) $< $(OFLAG) $@
 
 $(OBJDIR)init.o : $(APP_SRC)init.c $(DEP_BSP)
 	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAG_DRIVERS) $< $(OFLAG) $@

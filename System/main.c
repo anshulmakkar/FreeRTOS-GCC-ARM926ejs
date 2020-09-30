@@ -80,7 +80,7 @@ static void FreeRTOS_Error(const portCHAR* msg)
 void main(void)
 {
     Elf32_Ehdr *simple_elfh = APPLICATION_ELF(simple);
-    
+
     /* register the tasks */
     task_register_cons * simplec = task_register("simple", simple_elfh);
     if (!task_alloc(simplec))

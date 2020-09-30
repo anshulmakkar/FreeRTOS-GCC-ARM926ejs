@@ -36,6 +36,7 @@ LD = $(TOOLCHAIN)ld
 OBJCOPY = $(TOOLCHAIN)objcopy
 AR = $(TOOLCHAIN)ar
 M4 = m4
+HXDMP = hexdump -v -e '"BYTE(0x" 1/1 "%02X" ")\n"' 
 
 # GCC flags
 CFLAG = -c
@@ -44,6 +45,7 @@ INCLUDEFLAG = -I
 CPUFLAG = -mcpu=arm926ej-s
 WFLAG = -Wall -Wextra -Werror
 CFLAGS = $(CPUFLAG) $(WFLAG)
+M4FLAGS = -DARCH=arm9 -Dsimple_app
 
 # Additional C compiler flags to produce debugging symbols
 DEB_FLAG = -g -DDEBUG
@@ -96,20 +98,28 @@ FREERTOS_PORT_OBJS = port.o portISR.o
 STARTUP_OBJ = startup.o
 DRIVERS_OBJS = timer.o interrupt.o uart.o
 
-#APP_OBJS = init.o main.o print.o receive.o
-APP_OBJS = init.o print.o receive.o
+HELPER_OBJS = init.o print.o receive.o 
+APP_OBJ = simple.o
 # nostdlib.o must be commented out if standard lib is going to be linked!
-APP_OBJS += nostdlib.o
+HELPER_OBJS += nostdlib.o
 
-SYSTEM_OBJS = task_manager.o system.o
+SYSTEM_OBJS = task_manager.o system.o applications.ld
 
 # All object files specified above are prefixed the intermediate directory
-OBJS = $(addprefix $(OBJDIR), $(STARTUP_OBJ) $(SYSTEM_OBJS) $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(APP_OBJS))
+#OBJS = $(addprefix $(OBJDIR), $(STARTUP_OBJ) $(SYSTEM_OBJS) $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(APP_OBJS))
+
+OBJS = $(addprefix $(OBJDIR), $(STARTUP_OBJ) $(SYSTEM_OBJS) $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(HELPER_OBJS))
+APP_OBJS = $(addprefix $(OBJDIR), $(APP_OBJ) $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(HELPER_OBJS))
 
 # Definition of the linker script and final targets
 LINKER_SCRIPT = $(addprefix $(APP_SRC), qemu.ld) #will just create path Demo/qemu.ld
 ELF_IMAGE = image.elf
 TARGET = image.bin
+
+#Definition of linker script and app targets
+LINKER_SCRIPT_APP = $(addprefix $(APP_SRC), app.ld)
+APP_ELF_IMAGE = app_image.elf
+TARGET_APP = app_image.elf
 
 # Include paths to be passed to $(CC) where necessary
 INC_FREERTOS = $(FREERTOS_SRC)include/
@@ -139,6 +149,14 @@ $(OBJDIR) :
 
 $(ELF_IMAGE) : $(OBJS) $(LINKER_SCRIPT)
 	$(LD) -nostdlib -L $(OBJDIR) -T $(LINKER_SCRIPT) $(OBJS) $(OFLAG) $@
+
+app : $(TARGET_APP)
+$(APP_ELF_IMAGE): $(APP_OBJS) $(LINKER_SCRIPT_APP)
+	$(LD) -nostdlib -L $(OBJDIR) -T $(LINKER_SCRIPT_APP) $(APP_OBJS) $(OFLAG) $@
+
+dmp:
+$(OBJDIR)app_image.ld : $(OBJDIR)app_image.elf
+	$(HXDMP) $< $@ 
 
 debug : _debug_flags all
 
@@ -184,6 +202,9 @@ $(OBJDIR)system.o: $(SYSTEM_SRC)main.c
 $(OBJDIR)task_manager.o : $(SYSTEM_SRC)task_manager.c
 	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAGS) $< $(OFLAG) $@
 
+$(OBJDIR)applications.ld : $(SYSTEM_SRC)applications.ld.m4
+	$(M4) $(M4FLAG) $< $(OFLAG) $@
+
 # HW specific part, in FreeRTOS/Source/portable/$(PORT_COMP_TARGET)
 
 $(OBJDIR)port.o : $(FREERTOS_PORT_SRC)port.c
@@ -213,7 +234,6 @@ $(OBJDIR)heap_5.o : $(FREERTOS_MEMMANG_SRC)heap_5.c
 
 
 # Drivers
-
 $(OBJDIR)timer.o : $(DRIVERS_SRC)timer.c $(DEP_BSP)
 	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAG_DRIVERS) $< $(OFLAG) $@
 
@@ -225,8 +245,8 @@ $(OBJDIR)uart.o : $(DRIVERS_SRC)uart.c $(DEP_BSP)
 
 # Demo application
 
-#$(OBJDIR)main.o : $(APP_SRC)main.c
-#	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAGS) $< $(OFLAG) $@
+$(OBJDIR)simple.o : $(APP_SRC)simple.c
+	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAGS) $< $(OFLAG) $@
 
 $(OBJDIR)init.o : $(APP_SRC)init.c $(DEP_BSP)
 	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAG_DRIVERS) $< $(OFLAG) $@

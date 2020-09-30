@@ -25,31 +25,9 @@
 /* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 		   */
 /***********************************************************************************/
 
-#ifndef _APPLICATIONS_H_
-#define _APPLICATIONS_H_
-
-#include <FreeRTOS.h>
-
-#include "system.h"
-#include "elf.h"
-//#include "types.h"
-
-#define APPLICATION_TASK_PRIORITY 2
-
-extern u_int8_t _simple_elf_start;
-extern u_int8_t _simple_elf_end;
-
-#define APPLICATION_ELF(app) ((Elf32_Ehdr *)&_ ## app ## _elf_start)
-
-#ifdef HAS_SYSTEM_ELF_SYMBOL
-#define SYSTEM_ELF ((Elf32_Ehdr *)&_system_elf_start)
-#else /* HAS_SYSTEM_ELF_SYMBOL */
-#ifdef HAS_BINARY_REGISTER
-#include <System/memory_layout.h>
-#define SYSTEM_ELF (BINARY_REGISTER[0].elfh)
-#else /* HAS_BINARY_REGISTER */
-#define SYSTEM_ELF ((Elf32_Ehdr *)NULL)
-#endif /* HAS_BINARY_REGISTER */
-#endif /* HAS_SYSTEM_ELF_SYMBOL */
-
-#endif /* _APPLICATIONS_H_ */
+.global _start
+.global main
+	
+_start:
+	B main
+	

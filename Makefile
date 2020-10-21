@@ -109,8 +109,8 @@ SYSTEM_OBJS = task_manager.o system.o applications.ld
 # All object files specified above are prefixed the intermediate directory
 #OBJS = $(addprefix $(OBJDIR), $(STARTUP_OBJ) $(SYSTEM_OBJS) $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(APP_OBJS))
 
-OBJS = $(addprefix $(OBJDIR), $(STARTUP_OBJ) $(SYSTEM_OBJS) $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(HELPER_OBJS))
-APP_OBJS = $(addprefix $(OBJDIR), $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(APP_OBJ) $(HELPER_OBJS))
+OBJS = $(addprefix $(OBJDIR), $(STARTUP_OBJ) $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(HELPER_OBJS) $(SYSTEM_OBJS))
+APP_OBJS = $(addprefix $(OBJDIR), $(FREERTOS_OBJS) $(DRIVERS_OBJS) $(HELPER_OBJS) $(APP_OBJ))
 
 # Definition of the linker script and final targets
 LINKER_SCRIPT = $(addprefix $(APP_SRC), qemu.ld) #will just create path Demo/qemu.ld

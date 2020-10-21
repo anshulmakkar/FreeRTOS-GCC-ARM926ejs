@@ -80,8 +80,25 @@ static void FreeRTOS_Error(const portCHAR* msg)
 void main(void)
 {
     Elf32_Ehdr *simple_elfh = APPLICATION_ELF(binary_obj_app_image);
+    int a = 10;
     /* register the tasks */
     task_register_cons * simplec = task_register("simple", simple_elfh);
+
+    if ( pdFAIL == printInit(PRINT_UART_NR) )
+    {
+        FreeRTOS_Error("Initialization of print failed\r\n");
+    }
+
+
+    if ( a > 10)
+    {
+        vDirectPrintMsg("It shouldn't have been printed..\r\n");
+    }
+    else
+    {
+        vDirectPrintMsg("It should have been printed..\r\n");
+    }
+
     vDirectPrintMsg("A text may be entered using a keyboard.\r\n");
     if (!task_alloc(simplec))
     {

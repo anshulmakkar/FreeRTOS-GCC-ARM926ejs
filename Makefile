@@ -44,8 +44,9 @@ OFLAG = -o
 INCLUDEFLAG = -I
 CPUFLAG = -mcpu=arm926ej-s
 WFLAG = -Wall -Wextra -Werror
-CFLAGS = $(CPUFLAG) $(WFLAG)
+CFLAGS = $(CPUFLAG) $(WFLAG) -g 
 M4FLAGS = -DARCH=arm9 -Dsimple_app
+LDFLAGS = -nostartfiles -fPIC -shared
 
 # Additional C compiler flags to produce debugging symbols
 DEB_FLAG = -g -DDEBUG
@@ -109,7 +110,7 @@ SYSTEM_OBJS = task_manager.o system.o applications.ld
 #OBJS = $(addprefix $(OBJDIR), $(STARTUP_OBJ) $(SYSTEM_OBJS) $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(APP_OBJS))
 
 OBJS = $(addprefix $(OBJDIR), $(STARTUP_OBJ) $(SYSTEM_OBJS) $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(HELPER_OBJS))
-APP_OBJS = $(addprefix $(OBJDIR), $(APP_OBJ) $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(HELPER_OBJS))
+APP_OBJS = $(addprefix $(OBJDIR), $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(APP_OBJ) $(HELPER_OBJS))
 
 # Definition of the linker script and final targets
 LINKER_SCRIPT = $(addprefix $(APP_SRC), qemu.ld) #will just create path Demo/qemu.ld
@@ -120,6 +121,10 @@ TARGET = image.bin
 LINKER_SCRIPT_APP = $(addprefix $(APP_SRC), app.ld)
 APP_ELF_IMAGE = app_image.elf
 TARGET_APP = app_image.elf
+
+#definition OBJDUMP file
+TARGET_DMP = app_image.ld
+APP_LINKER_FILE = app_image.ld
 
 # Include paths to be passed to $(CC) where necessary
 INC_FREERTOS = $(FREERTOS_SRC)include/
@@ -148,15 +153,15 @@ $(OBJDIR) :
 	mkdir -p $@
 
 $(ELF_IMAGE) : $(OBJS) $(LINKER_SCRIPT)
-	$(LD) -nostdlib -L $(OBJDIR) -T $(LINKER_SCRIPT) $(OBJS) $(OFLAG) $@
+	$(LD) -nodefaultlibs -nostartfiles -L $(OBJDIR) -T$(LINKER_SCRIPT) $(OBJS) $(OFLAG) $@
 
 app : $(TARGET_APP)
 $(APP_ELF_IMAGE): $(APP_OBJS) $(LINKER_SCRIPT_APP)
-	$(LD) -nostdlib -L $(OBJDIR) -T $(LINKER_SCRIPT_APP) $(APP_OBJS) $(OFLAG) $@
+	$(LD) $(LDFLAGS) -L $(OBJDIR) -T$(LINKER_SCRIPT_APP) $(APP_OBJS) $(OFLAG) $@
 
-dmp:
-$(OBJDIR)app_image.ld : $(OBJDIR)app_image.elf
-	$(HXDMP) $< $@ 
+dmp: $(TARGET_DMP)
+$(APP_LINKER_FILE) : app_image.elf
+	$(HXDMP) $< > $@ 
 
 debug : _debug_flags all
 
@@ -203,7 +208,7 @@ $(OBJDIR)task_manager.o : $(SYSTEM_SRC)task_manager.c
 	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAGS) $< $(OFLAG) $@
 
 $(OBJDIR)applications.ld : $(SYSTEM_SRC)applications.ld.m4
-	$(M4) $(M4FLAG) $< $(OFLAG) $@
+	$(M4) $< $(OFLAG) $@
 
 # HW specific part, in FreeRTOS/Source/portable/$(PORT_COMP_TARGET)
 

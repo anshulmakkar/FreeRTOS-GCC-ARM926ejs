@@ -79,10 +79,10 @@ static void FreeRTOS_Error(const portCHAR* msg)
 /* Startup function that creates and runs two FreeRTOS tasks */
 void main(void)
 {
-    Elf32_Ehdr *simple_elfh = APPLICATION_ELF(simple);
-
+    Elf32_Ehdr *simple_elfh = APPLICATION_ELF(binary_obj_app_image);
     /* register the tasks */
     task_register_cons * simplec = task_register("simple", simple_elfh);
+    vDirectPrintMsg("A text may be entered using a keyboard.\r\n");
     if (!task_alloc(simplec))
     {
         vDirectPrintMsg("Failed to allocate task");

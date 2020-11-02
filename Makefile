@@ -44,9 +44,10 @@ OFLAG = -o
 INCLUDEFLAG = -I
 CPUFLAG = -mcpu=arm926ej-s
 WFLAG = -Wall -Wextra -Werror
-CFLAGS = $(CPUFLAG) $(WFLAG) -g 
+CFLAGS = $(CPUFLAG) $(WFLAG) -g
 M4FLAGS = -DARCH=arm9 -Dsimple_app
 LDFLAGS = -nostartfiles -fPIC -shared
+#LDFLAGS = -nostartfiles -pie 
 
 # Additional C compiler flags to produce debugging symbols
 DEB_FLAG = -g -DDEBUG
@@ -119,6 +120,7 @@ TARGET = image.bin
 
 #Definition of linker script and app targets
 LINKER_SCRIPT_APP = $(addprefix $(APP_SRC), app.ld)
+#LINKER_SCRIPT_APP = $(addprefix $(APP_SRC), qemu.ld)
 APP_ELF_IMAGE = app_image.elf
 TARGET_APP = app_image.elf
 

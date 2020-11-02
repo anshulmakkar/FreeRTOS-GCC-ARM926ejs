@@ -22,7 +22,6 @@ int task_alloc(task_register_cons *trc)
 
     /* find ou thte size of hte continuous regions that has to be allocated.
      * e_shnum = no. of entries in section header table */
-    
     for (i = 0; i < trc->elfh->e_shnum; i++) 
     {
         if (s[i].sh_flags & SHF_ALLOC) //if the section needs to be allocated
@@ -60,7 +59,7 @@ int task_alloc(task_register_cons *trc)
 
     LIST_INIT(&trc->sections);
 
-    for (i = 0; trc->elfh->e_shnum; i++)
+    for (i = 0; i < trc->elfh->e_shnum; i++)
     {
         if (s[i].sh_flags & SHF_ALLOC)
         {

@@ -36,10 +36,10 @@
 
 #define APPLICATION_TASK_PRIORITY 2
 
-//extern u_int8_t _simple_elf_start;
-//extern u_int8_t _simple_elf_end;
-extern u_int8_t _binary_obj_app_image_elf_start;
-extern u_int8_t _binary_obj_app_image_elf_end;
+extern u_int8_t _simple_elf_start;
+extern u_int8_t _simple_elf_end;
+//extern u_int8_t _binary_obj_app_image_elf_start;
+//extern u_int8_t _binary_obj_app_image_elf_end;
 
 #define APPLICATION_ELF(app) ((Elf32_Ehdr *)&_ ## app ## _elf_start)
 

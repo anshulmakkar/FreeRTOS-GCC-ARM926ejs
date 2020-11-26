@@ -26,8 +26,7 @@
 /***********************************************************************************/
 
 .global _start
-.global main
+.global simple_entry 
 	
 _start:
-	B main
-	
+	B simple_entry

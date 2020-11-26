@@ -1,40 +1,28 @@
-ENTRY(Vector_Init);
-
-MEMORY
-{
-	ram (rwx) : ORIGIN = 0x100000, LENGTH = 0x10000
-}
-
-PROVIDE(__stack = 0x200000);
+ENTRY(_start)
 
 SECTIONS
 {
-    .dynsym : { *(.dynsym) }
-    .rel.dyn : { *(.rel.dyn) }
-    .plt : { *(.plt) }
-    .text :
+    . = 0x00100000;
+    start = .;
+    .text : 
     {
-        _text = .;
-        __isr_vector_start = .;
-        *(.isr_vector)
-        __isr_vector_end = .;
-        *(.text*)
-        *(.rodata*)
-        _etext = .;
-    } > ram 
+        *(.text)
+        . = ALIGN(4096);
+    }
 
-    .data : AT(ADDR(.text) + SIZEOF(.text))
+    .data :
     {
-        _data = .;
-        *(vtable)
-        *(.data*)
-        _edata = .;
-    } > ram
+        *(.data)
+        *(.rodata)
+        . = ALIGN(4096);
+    }
+
     .bss :
     {
-        _bss = .;
-        *(.bss*)
-        *(COMMON)
-        _ebss = .;
-    } > ram
+        *(.bss)
+        *(stack_bottom)
+        *(stack_top)
+        . = ALIGN(4096);
+    }
+    end = .;
 }

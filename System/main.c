@@ -41,7 +41,7 @@
 #include "applications.h"
 #include "task_manager.h"
 
-
+#define EMBEDDED_TASK
 /*
  * This diagnostic pragma will suppress the -Wmain warning,
  * raised when main() does not return an int
@@ -60,6 +60,33 @@ typedef struct _paramStruct
     UBaseType_t  delay;              /* delay in milliseconds */
 } paramStruct;
 
+#ifdef EMBEDDED_TASK
+/* Parameters for two tasks */
+static const paramStruct tParam[2] =
+{
+    (paramStruct) { .text="Task1\r\n", .delay=2000 },
+   (paramStruct) { .text="Periodic task\r\n", .delay=3000 }
+};
+
+
+/* Task function - may be instantiated in multiple tasks */
+void vTaskFunction( void *pvParameters )
+{
+    const portCHAR* taskName;
+    paramStruct* params = (paramStruct*) pvParameters;
+
+    taskName = ( NULL==params || NULL==params->text ? "Hello world" : params->text );
+    if (taskName == NULL)
+    	vDirectPrintMsg("taskname is NULL\n");
+    for( ; ; )
+    {
+    	/* Print out the name of this task. */
+    	vDirectPrintMsg("Hello world\n");
+        vTaskDelay( 1000 / portTICK_RATE_MS );
+    }
+    vTaskDelete(NULL);
+}
+#endif
 
 /*
  * A convenience function that is called when a FreeRTOS API call fails
@@ -77,37 +104,46 @@ static void FreeRTOS_Error(const portCHAR* msg)
 }
 
 /* Startup function that creates and runs two FreeRTOS tasks */
-void main(void)
+void main()
 {
-    Elf32_Ehdr *simple_elfh = APPLICATION_ELF(binary_obj_app_image);
-    int a = 10;
-    /* register the tasks */
-    task_register_cons * simplec = task_register("simple", simple_elfh);
+//#ifdef EMBEDDED_TASK
+	entry_ptr_t entry_point = NULL;
 
+    /* register the tasks */
+    entry_point = vTaskFunction;
+
+    /* And finally create two tasks: */
+    if ( pdPASS != xTaskCreate((pdTASK_CODE)entry_point, "task1", 128, (void*) &tParam[0],
+                                 PRIOR_PERIODIC, NULL) )
+    {
+    	FreeRTOS_Error("Could not create task1\r\n");
+    }
+//#else
+    //Elf32_Ehdr *simple_elfh = APPLICATION_ELF(binary_obj_app_image);
+    Elf32_Ehdr *simple_elfh = APPLICATION_ELF(simple);
+    /* Init of print related tasks: */
     if ( pdFAIL == printInit(PRINT_UART_NR) )
     {
         FreeRTOS_Error("Initialization of print failed\r\n");
     }
 
+    task_register_cons * simplec = task_register("simple", simple_elfh);
 
-    if ( a > 10)
-    {
-        vDirectPrintMsg("It shouldn't have been printed..\r\n");
-    }
-    else
-    {
-        vDirectPrintMsg("It should have been printed..\r\n");
-    }
-
-    vDirectPrintMsg("A text may be entered using a keyboard.\r\n");
     if (!task_alloc(simplec))
     {
         vDirectPrintMsg("Failed to allocate task");
     }
 
+    if (!task_link(simplec))
+    {
+        vDirectPrintMsg("Failed to link task ");
+    }
 
-    vDirectPrintMsg("A text may be entered using a keyboard.\r\n");
-    vDirectPrintMsg("It will be displayed when 'Enter' is pressed.\r\n\r\n");
+    if (!task_start(simplec))
+    {
+        vDirectPrintMsg("Failed to start task \n");
+    }
+//#endif
 
     /* Start the FreeRTOS scheduler */
     vTaskStartScheduler();
@@ -116,7 +152,6 @@ void main(void)
      * If all goes well, vTaskStartScheduler should never return.
      * If it does return, typically not enough heap memory is reserved.
      */
-
     FreeRTOS_Error("Could not start the scheduler!!!\r\n");
 
     /* just in case if an infinite loop is somehow omitted in FreeRTOS_Error */

@@ -42,7 +42,14 @@
  * Memory region between 0x00000000 and 0x07FFFFFF is reserved for max. 128MB of RAM.
  * See page 4-3 of the DUI0225D.
  */
+ 
 
+/*
+MEMORY
+{
+    ram (rwx) : ORIGIN = 0x00, LENGTH = 128 M
+}
+*/
 ENTRY(vectors_start)
 
 SECTIONS
@@ -108,17 +115,21 @@ SECTIONS
         *(.data)
         __data_end = .;
     }
-
+    .applications :
+    {
+      INCLUDE "obj/applications.ld"
+    }
+    
     .bss :
     {
         __bss_begin = .;
         *(.bss)
         __bss_end = .;
     }
-    . = ALIGN(4);                  /* The section size is aligned to the 4-byte boundary */
-
+    . = ALIGN(4);
+                      /* The section size is aligned to the 4-byte boundary */
     __ld_FootPrint_End = .;        /* A convenience symbol to determine the actual memory footprint */
-
+    
     /* The remainder of RAM is reserved for the heap (if malloc is ever used) */
     .heap :
     {
@@ -127,4 +138,7 @@ SECTIONS
         . = __ld_Ram_size;
         __heap_end = .;
     }
+    
+    
+
 }

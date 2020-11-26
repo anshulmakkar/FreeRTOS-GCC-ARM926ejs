@@ -12,6 +12,9 @@
 
 typedef LIST_HEAD(task_section_list_t, task_section_cons_t)
     task_section_list;
+typedef void (*entry_ptr_t) (void *);
+#define APPLICATION_TASK_PRIORITY 2
+
 
 /*
  * defines for task_register structure. Implemented as a rbtree for 
@@ -32,9 +35,6 @@ typedef struct task_register_cons_t {
 
 typedef RB_HEAD(task_register_tree_t, task_restister_cons_t)
     task_register_tree;
-
-int task_alloc(task_register_cons *trc);
-task_register_cons *task_register(const char *name, Elf32_Ehdr *elfh);
 
 /* defines for task_rection structure. Implemented as double linked list */
 typedef struct task_section_cons_t {
@@ -59,5 +59,11 @@ static __inline__ int task_register_cons_cmp
 		return (int64_t)op1i - (int64_t)op2i;
 }
 //RB_PROTOTYPE(task_register_tree_t, task_register_cons_t, tasks, task_register_cons_cmp)
+
+int task_alloc(task_register_cons *trc);
+task_register_cons *task_register(const char *name, Elf32_Ehdr *elfh);
+int task_link(task_register_cons *trc);
+int task_start(task_register_cons *trc);
+Elf32_Sym *find_symbol(char *name, Elf32_Ehdr *elf_h);
 
 #endif

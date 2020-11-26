@@ -32,22 +32,29 @@ TOOLCHAIN = arm-none-eabi-
 CC = $(TOOLCHAIN)gcc
 CXX = $(TOOLCHAIN)g++
 AS = $(TOOLCHAIN)as
-LD = $(TOOLCHAIN)ld
+#LD = $(TOOLCHAIN)ld
+#LINK = $(TOOLCHAIN)gcc
+LD = $(TOOLCHAIN)gcc 
 OBJCOPY = $(TOOLCHAIN)objcopy
 AR = $(TOOLCHAIN)ar
 M4 = m4
 HXDMP = hexdump -v -e '"BYTE(0x" 1/1 "%02X" ")\n"' 
 
+#dont use cpuflag as cortex-a9. program crashes during pic initializaiton.
 # GCC flags
 CFLAG = -c
+DISASSFLAG = -s
 OFLAG = -o
 INCLUDEFLAG = -I
 CPUFLAG = -mcpu=arm926ej-s
+#CPUFLAG = -mcpu=cortex-a9
 WFLAG = -Wall -Wextra -Werror
-CFLAGS = $(CPUFLAG) $(WFLAG) -g
-M4FLAGS = -DARCH=arm9 -Dsimple_app
-LDFLAGS = -nostartfiles -fPIC -shared
-#LDFLAGS = -nostartfiles -pie 
+CFLAGS = $(CPUFLAG) $(WFLAG) -fPIC -g 
+#M4FLAGS = -DARCH=arm9 -Dsimple_app
+M4FLAGS = -DARCH=arm9 -Dsimple_app -mcpu=arm926ej-s
+#LDFLAGS = -nostartfiles -fPIC -shared -mcpu=arm926ej-s
+LDFLAGS = -nostartfiles -fPIC -shared -mcpu=arm926ej-s
+
 
 # Additional C compiler flags to produce debugging symbols
 DEB_FLAG = -g -DDEBUG
@@ -100,18 +107,19 @@ FREERTOS_PORT_OBJS = port.o portISR.o
 STARTUP_OBJ = startup.o
 DRIVERS_OBJS = timer.o interrupt.o uart.o
 
-HELPER_OBJS = init.o print.o receive.o 
-APP_OBJ = simple.o
+HELPER_OBJS = print.o receive.o 
+APP_OBJ = simple.o app_startup.o
 # nostdlib.o must be commented out if standard lib is going to be linked!
 HELPER_OBJS += nostdlib.o
 
-SYSTEM_OBJS = task_manager.o system.o applications.ld
+SYSTEM_OBJS = init.o task_manager.o system.o 
+#applications.ld
 
 # All object files specified above are prefixed the intermediate directory
 #OBJS = $(addprefix $(OBJDIR), $(STARTUP_OBJ) $(SYSTEM_OBJS) $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(APP_OBJS))
 
 OBJS = $(addprefix $(OBJDIR), $(STARTUP_OBJ) $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(HELPER_OBJS) $(SYSTEM_OBJS))
-APP_OBJS = $(addprefix $(OBJDIR), $(FREERTOS_OBJS) $(DRIVERS_OBJS) $(HELPER_OBJS) $(APP_OBJ))
+APP_OBJS = $(addprefix $(OBJDIR), $(HELPER_OBJS) $(APP_OBJ))
 
 # Definition of the linker script and final targets
 LINKER_SCRIPT = $(addprefix $(APP_SRC), qemu.ld) #will just create path Demo/qemu.ld
@@ -140,37 +148,7 @@ INC_FLAG_DRIVERS = $(INCLUDEFLAG)$(INC_DRIVERS)
 DEP_BSP = $(INC_DRIVERS)bsp.h
 
 
-#
-# Make rules:
-#
 
-all : $(TARGET)
-
-rebuild : clean all
-
-$(TARGET) : $(OBJDIR) $(ELF_IMAGE)
-	$(OBJCOPY) -O binary $(word 2,$^) $@
-
-$(OBJDIR) :
-	mkdir -p $@
-
-$(ELF_IMAGE) : $(OBJS) $(LINKER_SCRIPT)
-	$(LD) -nodefaultlibs -nostartfiles -L $(OBJDIR) -T$(LINKER_SCRIPT) $(OBJS) $(OFLAG) $@
-
-app : $(TARGET_APP)
-$(APP_ELF_IMAGE): $(APP_OBJS) $(LINKER_SCRIPT_APP)
-	$(LD) $(LDFLAGS) -L $(OBJDIR) -T$(LINKER_SCRIPT_APP) $(APP_OBJS) $(OFLAG) $@
-
-dmp: $(TARGET_DMP)
-$(APP_LINKER_FILE) : app_image.elf
-	$(HXDMP) $< > $@ 
-
-debug : _debug_flags all
-
-debug_rebuild : _debug_flags rebuild
-
-_debug_flags :
-	$(eval CFLAGS += $(DEB_FLAG))
 
 
 # Startup code, implemented in assembler
@@ -211,6 +189,9 @@ $(OBJDIR)task_manager.o : $(SYSTEM_SRC)task_manager.c
 
 $(OBJDIR)applications.ld : $(SYSTEM_SRC)applications.ld.m4
 	$(M4) $< $(OFLAG) $@
+	
+$(OBJDIR)init.o : $(APP_SRC)init.c $(DEP_BSP)
+	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAG_DRIVERS) $< $(OFLAG) $@
 
 # HW specific part, in FreeRTOS/Source/portable/$(PORT_COMP_TARGET)
 
@@ -255,9 +236,6 @@ $(OBJDIR)uart.o : $(DRIVERS_SRC)uart.c $(DEP_BSP)
 $(OBJDIR)simple.o : $(APP_SRC)simple.c
 	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAGS) $< $(OFLAG) $@
 
-$(OBJDIR)init.o : $(APP_SRC)init.c $(DEP_BSP)
-	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAG_DRIVERS) $< $(OFLAG) $@
-
 $(OBJDIR)print.o : $(APP_SRC)print.c
 	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAGS) $(INC_FLAG_DRIVERS) $< $(OFLAG) $@
 
@@ -266,8 +244,43 @@ $(OBJDIR)receive.o : $(APP_SRC)receive.c $(DEP_BSP)
 
 $(OBJDIR)nostdlib.o : $(APP_SRC)nostdlib.c
 	$(CC) $(CFLAG) $(CFLAGS) $< $(OFLAG) $@
+	
+$(OBJDIR)app_startup.o : $(APP_SRC)app_startup.S
+	$(CC) $(CFLAG) $(CFLAGS) $< $(OFLAG) $@
 
+#
+# Make rules:
+#
 
+all : $(TARGET)
+rebuild : clean all
+$(warning 'cleaned up')
+$(TARGET) : $(OBJDIR) $(ELF_IMAGE)
+	$(OBJCOPY) -O binary $(word 2,$^) $@
+
+$(OBJDIR) :
+	mkdir -p $@
+#-nodefaultlibs 
+$(ELF_IMAGE) : $(OBJS) $(LINKER_SCRIPT)
+	$(LD) -nostartfiles -L $(OBJDIR) -T$(LINKER_SCRIPT) $(OBJS) $(OFLAG) $@
+
+app : $(TARGET_APP)
+$(APP_ELF_IMAGE): $(APP_OBJS)
+	#$(LD) $(LDFLAGS) $(APP_OBJS)  $(OFLAG)  $@
+	#$(LD) $(LDFLAGS) -L $(OBJDIR) -T$(LINKER_SCRIPT_APP)  $(APP_OBJS)  $(OFLAG)  $@
+	$(LD) $(LDFLAGS) -T$(LINKER_SCRIPT_APP)  $(APP_OBJS)  $(OFLAG)  $@
+
+dmp: $(TARGET_DMP)
+$(APP_LINKER_FILE) : app_image.elf
+	$(HXDMP) $< > $@ 
+
+debug : _debug_flags all
+
+debug_rebuild : _debug_flags rebuild
+
+_debug_flags :
+	$(eval CFLAGS += $(DEB_FLAG))
+	
 # Cleanup directives:
 
 clean_obj :

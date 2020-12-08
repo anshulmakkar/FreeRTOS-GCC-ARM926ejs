@@ -33,7 +33,6 @@
 
 #include <FreeRTOS.h>
 #include <task.h>
-#include <stdio.h>
 //#include "app_config.h"
 #include "print.h"
 //#include "receive.h"
@@ -47,18 +46,6 @@
  * More details about the GCC diagnostic pragmas:
  * https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Pragmas.html
  */
-#if 0
-#pragma GCC diagnostic ignored "-Wmain"
-
-/* Struct with settings for each task */
-typedef struct _paramStruct
-{
-    portCHAR* text;                  /* text to be printed by the task */
-    UBaseType_t  delay;              /* delay in milliseconds */
-} paramStruct;
-
-static const UBaseType_t defaultDelay = 1000;
-#endif
 
 /* Startup function that creates and runs two FreeRTOS tasks */
 void simple_entry(void *param)
@@ -70,23 +57,14 @@ void simple_entry(void *param)
      * to System mode and enable interrupt exceptions.
      */
     vDirectPrintMsg("= = = S I M P LE T E S T   S T A R T E D = = =\r\n\r\n");
-    printf("fuck yeah !!!");
     if (param != NULL)
     	vDirectPrintMsg("param to simple not null");
        /* Create a print gate keeper task: */
 
     /* just in case if an infinite loop is somehow omitted in FreeRTOS_Error */
     while (1)
-    	printf("fuck yeah !!!");
-    	;
+    	vDirectPrintMsg("fuck yeah...");
+    		;
 
-#if 0
-    for ( ; ; )
-    {
-    	printf("fuck yeah !!!")
-    	vDirectPrintMsg("Simple!!!");
-    	vTaskDelay(defaultDelay/ portTICK_RATE_MS);
-    }
-#endif
 
 }

@@ -1,28 +1,27 @@
 ENTRY(_start)
-
+/* start = .;*/
 SECTIONS
 {
-    . = 0x00100000;
-    start = .;
-    .text : 
+    . = SEGMENT_START("text-segment", 0) + SIZEOF_HEADERS;
+   .text : 
     {
         *(.text)
-        . = ALIGN(4096);
     }
-
+    .fini :
+    {
+        KEEP (*(.fini))
+    } =0
+    .dynamic : { *(.dynamic) }
+    got : { *(.got.plt) *(.igot.plt) *(.got) *(.igot) }
     .data :
     {
         *(.data)
         *(.rodata)
-        . = ALIGN(4096);
     }
-
+    
     .bss :
     {
         *(.bss)
-        *(stack_bottom)
-        *(stack_top)
-        . = ALIGN(4096);
     }
-    end = .;
+    . = ALIGN(4);
 }

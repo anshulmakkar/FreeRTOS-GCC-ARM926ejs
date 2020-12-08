@@ -44,13 +44,14 @@
  */
  
 
+ENTRY(vectors_start)
+
 /*
 MEMORY
 {
-    ram (rwx) : ORIGIN = 0x00, LENGTH = 128 M
+    ram (rwx) : ORIGIN = 0x10000, LENGTH = ( 128M - 0x10000 )
 }
 */
-ENTRY(vectors_start)
 
 SECTIONS
 {
@@ -69,7 +70,7 @@ SECTIONS
     __ld_Init_Addr = 0x10000;     /* Qemu starts execution at this address */
     __ld_Svc_Stack_Size = 0x1000; /* Very generous size of the Supervisor mode's stack (4 kB) */
     __ld_Irq_Stack_size = 0x1000; /* Very generous size of the IRQ mode's stack (4 kB) */
-    __ld_Ram_size = 128M;         /* Total capacity of RAM */
+    __ld_Ram_size = 256M;         /* Total capacity of RAM */
 
 
     . = __ld_Vectors_Size;        /* Move the pointer after the "reserved" area for exception vectors */
@@ -100,45 +101,31 @@ SECTIONS
         *(.text)
         __text_end = .;
     }
-
-    /* followed by other sections... */
-    .rodata :
-    {
-        __rodata_begin = .;
-        *(.rodata)
-        __rodata_end = .;
-    }
-
+    
     .data :
     {
         __data_begin = .;
         *(.data)
         __data_end = .;
     }
-    .applications :
+
+    .applications ALIGN(4):
     {
       INCLUDE "obj/applications.ld"
     }
-    
+    . = ALIGN(4);
     .bss :
     {
-        __bss_begin = .;
-        *(.bss)
-        __bss_end = .;
+      __bss_begin = .;
+      *(.bss)
+      __bss_end = .;
     }
     . = ALIGN(4);
-                      /* The section size is aligned to the 4-byte boundary */
-    __ld_FootPrint_End = .;        /* A convenience symbol to determine the actual memory footprint */
-    
     /* The remainder of RAM is reserved for the heap (if malloc is ever used) */
     .heap :
     {
         __heap_begin = .;
         *(.heap)
-        . = __ld_Ram_size;
         __heap_end = .;
     }
-    
-    
-
 }

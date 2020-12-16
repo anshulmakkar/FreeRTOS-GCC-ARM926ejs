@@ -5,6 +5,8 @@ sleep 2
 mkdir obj
 m4 -d System/applications.ld.m4 > obj/applications.ld
 sleep 2
+#make --debug lib
+#sleep 2
 make --debug app
 sleep 2
 mv app_image.elf obj/

@@ -119,6 +119,7 @@ SECTIONS
       __bss_begin = .;
       *(.bss)
       __bss_end = .;
+      end = __bss_end;
     }
     . = ALIGN(4);
     /* The remainder of RAM is reserved for the heap (if malloc is ever used) */

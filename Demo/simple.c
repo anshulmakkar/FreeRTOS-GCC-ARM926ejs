@@ -35,7 +35,19 @@
 #include <task.h>
 //#include "app_config.h"
 #include "print.h"
+//#include "uart.h"
 //#include "receive.h"
+
+volatile unsigned int* const UART0 = (unsigned int*)0x0101F1000;
+
+static void uart_print(const char *s)
+{
+	while(*s != '\n')
+	{
+		*UART0 = (unsigned int)(*s); /* send to UART */
+		s++;
+	}
+}
 
 
 /*
@@ -56,15 +68,18 @@ void simple_entry(void *param)
      * When vTaskStartScheduler launches the first task, it will switch
      * to System mode and enable interrupt exceptions.
      */
-    vDirectPrintMsg("= = = S I M P LE T E S T   S T A R T E D = = =\r\n\r\n");
+	//uart_print(0, "test test");
+    uart_print("= = = S I M P LE T E S T   S T A R T E D = = =\n");
     if (param != NULL)
-    	vDirectPrintMsg("param to simple not null");
+    	uart_print("param to simple not null");
        /* Create a print gate keeper task: */
 
     /* just in case if an infinite loop is somehow omitted in FreeRTOS_Error */
     while (1)
-    	vDirectPrintMsg("fuck yeah...");
-    		;
+    {
+    	uart_print("I am dynamic simple ...\n");
+    	for( int i = 0; i < 100000000; i++);
+    }
 
 
 }

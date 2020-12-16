@@ -119,7 +119,7 @@ SYSTEM_OBJS = init.o task_manager.o system.o
 #OBJS = $(addprefix $(OBJDIR), $(STARTUP_OBJ) $(SYSTEM_OBJS) $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(APP_OBJS))
 
 OBJS = $(addprefix $(OBJDIR), $(STARTUP_OBJ) $(FREERTOS_OBJS) $(FREERTOS_MEMMANG_OBJS) $(FREERTOS_PORT_OBJS) $(DRIVERS_OBJS) $(HELPER_OBJS) $(SYSTEM_OBJS))
-APP_OBJS = $(addprefix $(OBJDIR), $(HELPER_OBJS) $(APP_OBJ))
+APP_OBJS = $(addprefix $(OBJDIR), $(DRIVBER_OBJS) $(HELPER_OBJS) $(APP_OBJ))
 
 # Definition of the linker script and final targets
 LINKER_SCRIPT = $(addprefix $(APP_SRC), qemu.ld) #will just create path Demo/qemu.ld
@@ -234,7 +234,7 @@ $(OBJDIR)uart.o : $(DRIVERS_SRC)uart.c $(DEP_BSP)
 # Demo application
 
 $(OBJDIR)simple.o : $(APP_SRC)simple.c
-	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAGS) $< $(OFLAG) $@
+	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAGS) $(INC_FLAG_DRIVERS) $< $(OFLAG) $@
 
 $(OBJDIR)print.o : $(APP_SRC)print.c
 	$(CC) $(CFLAG) $(CFLAGS) $(INC_FLAGS) $(INC_FLAG_DRIVERS) $< $(OFLAG) $@
@@ -262,7 +262,7 @@ $(OBJDIR) :
 	mkdir -p $@
 #-nodefaultlibs 
 $(ELF_IMAGE) : $(OBJS) $(LINKER_SCRIPT)
-	$(LD) -nostartfiles -L $(OBJDIR) -T$(LINKER_SCRIPT) $(OBJS) $(OFLAG) $@
+	$(LD) -nostartfiles -specs=nano.specs -specs=nosys.specs -L $(OBJDIR) -T$(LINKER_SCRIPT) $(OBJS) $(OFLAG) $@
 
 app : $(TARGET_APP)
 $(APP_ELF_IMAGE): $(APP_OBJS)

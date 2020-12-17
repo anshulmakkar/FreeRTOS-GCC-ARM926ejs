@@ -30,6 +30,7 @@
 
 
 #include <stddef.h>
+#include <stdio.h>
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -68,6 +69,21 @@ static const paramStruct tParam[2] =
    (paramStruct) { .text="Periodic task\r\n", .delay=3000 }
 };
 
+/* Note: QEMU model of PL011 serial port ignores the transmit
+FIFO capabilities. When writing on a real SOC, the
+"Transmit FIFO Full" flag must be checked in UARTFR register
+before writing on the UART register*/
+
+volatile unsigned int* const UART0 = (unsigned int*)0x0101F1000;
+
+static void uart_print(const char *s)
+{
+	while(*s != '\n')
+	{
+		*UART0 = (unsigned int)(*s); /* send to UART */
+		s++;
+	}
+}
 
 /* Task function - may be instantiated in multiple tasks */
 void vTaskFunction( void *pvParameters )
@@ -81,7 +97,7 @@ void vTaskFunction( void *pvParameters )
     for( ; ; )
     {
     	/* Print out the name of this task. */
-    	vDirectPrintMsg("Hello world\n");
+        vDirectPrintMsg("I am static task1\n");
         vTaskDelay( 1000 / portTICK_RATE_MS );
     }
     vTaskDelete(NULL);
@@ -111,13 +127,14 @@ void main()
 
     /* register the tasks */
     entry_point = vTaskFunction;
-
+    uart_print("print without uart initialization \n");
     /* And finally create two tasks: */
     if ( pdPASS != xTaskCreate((pdTASK_CODE)entry_point, "task1", 128, (void*) &tParam[0],
                                  PRIOR_PERIODIC, NULL) )
     {
     	FreeRTOS_Error("Could not create task1\r\n");
     }
+
 //#else
     //Elf32_Ehdr *simple_elfh = APPLICATION_ELF(binary_obj_app_image);
     Elf32_Ehdr *simple_elfh = APPLICATION_ELF(simple);
